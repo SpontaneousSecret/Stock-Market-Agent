@@ -1,12 +1,10 @@
 import os
 from langchain.agents import AgentExecutor, create_react_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_groq import ChatGroq
 from langchain.memory import ConversationBufferMemory
 from tools.stock_tools import StockPriceTool, WebSearchTool
-from langchain.agents.output_parsers import ReActSingleInputOutputParser
-from typing import List
 
 class StockMarketAgent:
     """
@@ -16,34 +14,23 @@ class StockMarketAgent:
     def __init__(self):
         # Initialize Groq LLM
         self.llm = ChatGroq(
-            model=os.getenv("LLM_MODEL", "llama3-70b-8192"),
+            model=os.getenv("LLM_MODEL", "llama3-70b-8192"),  # Default to Llama3 70B model
             temperature=0,
             api_key=os.getenv("GROQ_API_KEY")
         )
 
-        # Initialize tools
         self.stock_price_tool = StockPriceTool()
         self.web_search_tool = WebSearchTool()
-        
-        # Define tools
+
         self.tools = [self.stock_price_tool, self.web_search_tool]
 
-        # Initialize memory
         self.memory = ConversationBufferMemory(
             memory_key="chat_history",
             return_messages=True
         )
 
-        # Properly format tool descriptions
-        tool_names = ", ".join([tool.name for tool in self.tools])
-        tool_descriptions = "\n\n".join([
-            f"Tool: {tool.name}\nDescription: {tool.description}\nUsage: {tool.name}({{arguments}})" 
-            for tool in self.tools
-        ])
-
-        # Create a prompt template with correctly formatted tools
         self.prompt = ChatPromptTemplate.from_messages([
-            ("system", f"""You are a professional stock market analyst assistant. 
+            ("system", """You are a professional stock market analyst assistant. 
             Your job is to provide accurate information about stock prices and 
             offer insightful analysis when requested.
             
@@ -61,7 +48,7 @@ class StockMarketAgent:
             {tool_names}
 
             You have access to the following tools:
-            {tool_descriptions}
+            {tools}
              
             Use the tools when needed and reason step by step to provide answers.
             """),
@@ -71,23 +58,18 @@ class StockMarketAgent:
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
 
-        # Ensure agent_scratchpad is a list of messages
-        self.agent_scratchpad = []
-
-        # Create the ReAct agent
         self.agent = create_react_agent(
             llm=self.llm,
             tools=self.tools,
             prompt=self.prompt
         )
 
-        # Create the agent executor (Removed invalid argument)
         self.agent_executor = AgentExecutor(
             agent=self.agent,
             tools=self.tools,
             memory=self.memory,
             verbose=True,
-            max_iterations=5  # Removed handle_parsing_errors
+            handle_parsing_errors=True,
         )
 
     def get_stock_price(self, ticker):
@@ -101,7 +83,7 @@ class StockMarketAgent:
             dict: Dictionary containing stock price data
         """
         try:
-            # Ensure that invoke() method is correctly used
+            # Directly call the tool to get stock price
             result = self.stock_price_tool.invoke({"ticker": ticker})
             return result
         except Exception as e:
@@ -109,7 +91,7 @@ class StockMarketAgent:
             response = self.agent_executor.invoke({
                 "input": f"What is the current stock price of {ticker}? Just return the price data."
             })
-            return response.get("output", {"error": str(e)})
+            return response
         
     def analyze_stock(self, ticker, price_data):
         """
@@ -128,4 +110,4 @@ class StockMarketAgent:
             Provide a clear buy, sell, or hold recommendation with brief justification."""
         })
         
-        return response.get("output", "Unable to analyze stock at this time.")
+        return response["output"]

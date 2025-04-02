@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -6,9 +6,11 @@ from agent import StockMarketAgent
 
 load_dotenv()
 
-app = FastAPI(title="Stock Market AI Agent API", 
-             description="API for fetching stock prices and providing analysis using LangChain and LLMs",
-             version="1.0.0")
+app = FastAPI(
+    title="Stock Market AI Agent API", 
+    description="API for fetching stock prices and providing analysis using LangChain and LLMs",
+    version="1.0.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,22 +20,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-agent=StockMarketAgent()
+# Initialize the Stock Market Agent
+agent = StockMarketAgent()
 
 class StockRequest(BaseModel):
     ticker: str
-    analyze: str
+    analyze: bool  # ✅ Fix: Use `bool` instead of `str`
 
 class StockResponse(BaseModel):
     ticker: str
     price_data: dict
-    analysis: str
+    analysis: str | None  # ✅ Fix: Allow `None` if no analysis is requested
 
 @app.get("/")
 async def root():
     return {"message": "Stock Market AI Agent API is running"}
-
-
 
 @app.post("/stock", response_model=StockResponse)
 async def get_stock_info(request: StockRequest):
@@ -53,7 +54,7 @@ async def get_stock_info(request: StockRequest):
         
         # Get analysis if requested
         analysis = None
-        if request.analyze=="true":
+        if request.analyze:
             analysis = agent.analyze_stock(request.ticker, price_data)
         
         return StockResponse(
