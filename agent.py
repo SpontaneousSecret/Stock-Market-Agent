@@ -25,27 +25,25 @@ class StockMarketAgent:
         self.stock_price_tool = StockPriceTool()
         self.web_search_tool = WebSearchTool()
         
-        # Use a simpler approach with tools
-        self.tools = [
-            self.stock_price_tool,
-            self.web_search_tool
-        ]
-        
+        # Define tools
+        self.tools = [self.stock_price_tool, self.web_search_tool]
+
         # Initialize memory
         self.memory = ConversationBufferMemory(
             memory_key="chat_history",
             return_messages=True
         )
 
-        # Create tool description text
+        # Properly format tool descriptions
+        tool_names = ", ".join([tool.name for tool in self.tools])
         tool_descriptions = "\n\n".join([
             f"Tool: {tool.name}\nDescription: {tool.description}\nUsage: {tool.name}({{arguments}})" 
             for tool in self.tools
         ])
 
-        # Create a prompt template with manual tool formatting - avoid using functions API
+        # Create a prompt template with correctly formatted tools
         self.prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are a professional stock market analyst assistant. 
+            ("system", f"""You are a professional stock market analyst assistant. 
             Your job is to provide accurate information about stock prices and 
             offer insightful analysis when requested.
             
@@ -63,7 +61,7 @@ class StockMarketAgent:
             {tool_names}
 
             You have access to the following tools:
-            {tools}
+            {tool_descriptions}
              
             Use the tools when needed and reason step by step to provide answers.
             """),
@@ -73,6 +71,9 @@ class StockMarketAgent:
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
 
+        # Ensure agent_scratchpad is a list of messages
+        self.agent_scratchpad = []
+
         # Create the ReAct agent
         self.agent = create_react_agent(
             llm=self.llm,
@@ -80,14 +81,13 @@ class StockMarketAgent:
             prompt=self.prompt
         )
 
-        # Create the agent executor
+        # Create the agent executor (Removed invalid argument)
         self.agent_executor = AgentExecutor(
             agent=self.agent,
             tools=self.tools,
             memory=self.memory,
             verbose=True,
-            handle_parsing_errors=True,
-            max_iterations=5
+            max_iterations=5  # Removed handle_parsing_errors
         )
 
     def get_stock_price(self, ticker):
@@ -101,7 +101,7 @@ class StockMarketAgent:
             dict: Dictionary containing stock price data
         """
         try:
-            # Directly call the tool to get stock price
+            # Ensure that invoke() method is correctly used
             result = self.stock_price_tool.invoke({"ticker": ticker})
             return result
         except Exception as e:
