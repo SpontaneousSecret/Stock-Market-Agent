@@ -70,12 +70,18 @@ POST /stock
 
 Request Body:
 
+<img width="168" alt="image" src="https://github.com/user-attachments/assets/3d1d6ce6-f52a-41ab-8a83-1e48b4e5f725" />
+
+
 {
     "ticker": "AAPL",
     "analyze": true
 }
 
 Response:
+
+<img width="1284" alt="image" src="https://github.com/user-attachments/assets/ad85bebc-8309-4158-99a6-fc44f95e1c2b" />
+
 
 {
     "ticker": "AAPL",
@@ -92,6 +98,12 @@ Response:
 }
 
 Postman API Requests
+
+**(while using render deployment, due to limited render resources, server start might take some time.)
+
+**(the analyze="true" takes =~1.2 minutes to respond)
+
+**(analyze="false" has a response time of <700ms)
 
 For testing the deployed url, use the following Postman configurations:
 
