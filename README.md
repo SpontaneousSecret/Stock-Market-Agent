@@ -120,16 +120,8 @@ Body:
 
 Project Structure
 
-stock-market-ai-agent/
-│── tools/
-│   ├── stock_tools.py  # Fetch stock prices
-│   ├── web_search.py   # Web search for stock analysis
-│── utils/
-│   ├── helpers.py      # Utility functions
-│── agent.py           # StockMarketAgent class
-│── main.py            # FastAPI application
-│── requirements.txt   # Dependencies
-│── .env               # Environment variables
+![image](https://github.com/user-attachments/assets/5319ed36-7a74-49ca-b556-2ec9da4b8f11)
+
 
 Contributing
 
