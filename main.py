@@ -25,12 +25,12 @@ agent = StockMarketAgent()
 
 class StockRequest(BaseModel):
     ticker: str
-    analyze: bool  # ✅ Fix: Use `bool` instead of `str`
+    analyze: bool
 
 class StockResponse(BaseModel):
     ticker: str
     price_data: dict
-    analysis: str | None  # ✅ Fix: Allow `None` if no analysis is requested
+    analysis: str | None  
 
 @app.get("/")
 async def root():

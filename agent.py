@@ -16,7 +16,7 @@ class StockMarketAgent:
             raise ValueError("GROQ_API_KEY environment variable is not set")
             
         self.llm = ChatGroq(
-            model=os.getenv("LLM_MODEL", "llama3-70b-8192"),  # Default to Llama3 70B model
+            model=os.getenv("LLM_MODEL", "llama3-70b-8192"),  
             temperature=0,
             api_key=api_key
         )
@@ -72,7 +72,7 @@ class StockMarketAgent:
         {agent_scratchpad}
         """
         
-        # Create prompt with the tools and tool names explicitly formatted
+        # Create prompt
         tool_names = [tool.name for tool in self.tools]
         tools_formatted = "\n".join([f"{tool.name}: {tool.description}" for tool in self.tools])
         
@@ -125,7 +125,6 @@ class StockMarketAgent:
                 "input": f"What is the current stock price of {ticker}? Just return the price data."
             })
             
-            # Extract the output from the response
             if isinstance(response, dict) and "output" in response:
                 return response["output"]
             return response
@@ -145,22 +144,21 @@ class StockMarketAgent:
             raise ValueError("Ticker must be a valid string")
     
         try:
-        # Try with the agent first
             response = self.agent_executor.invoke({
                 "input": f"""Analyze {ticker} stock based on this price data: {price_data}.
                 Search for recent news and market sentiment about {ticker}.
                 Provide a clear buy, sell, or hold recommendation with brief justification."""
             })
         
-        # Check if we got a proper response
+        
             output = response.get("output", "")
             if output and "iteration limit" not in output.lower() and "time limit" not in output.lower():
                 return output
             
-        # If we hit the limit, use direct LLM call as fallback
+        
             print(f"Agent hit iteration/time limit. Using direct LLM fallback for {ticker}.")
         
-        # Use a direct call to the LLM without the agent framework
+        
             fallback_prompt = f"""
             You are a professional stock market analyst. Based on the following information about {ticker} stock:
         
