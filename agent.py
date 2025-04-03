@@ -132,28 +132,54 @@ class StockMarketAgent:
         
     def analyze_stock(self, ticker, price_data):
         """
-        Analyze the stock and provide buy/sell/hold recommendation.
-        
+        Analyze the stock and provide buy/sell/hold recommendation with fallback mechanism.
+    
         Args:
             ticker (str): The stock ticker symbol
             price_data (dict): Dictionary containing stock price data
-            
+        
         Returns:
             str: Analysis and recommendation
         """
         if not ticker or not isinstance(ticker, str):
             raise ValueError("Ticker must be a valid string")
+    
+        try:
+        # Try with the agent first
+            response = self.agent_executor.invoke({
+                "input": f"""Analyze {ticker} stock based on this price data: {price_data}.
+                Search for recent news and market sentiment about {ticker}.
+                Provide a clear buy, sell, or hold recommendation with brief justification."""
+            })
         
-        response = self.agent_executor.invoke({
-            "input": f"""Analyze {ticker} stock based on this price data: {price_data}. 
-            Search for recent news and market sentiment about {ticker}.
-            Provide a clear buy, sell, or hold recommendation with brief justification."""
-        })
+        # Check if we got a proper response
+            output = response.get("output", "")
+            if output and "iteration limit" not in output.lower() and "time limit" not in output.lower():
+                return output
+            
+        # If we hit the limit, use direct LLM call as fallback
+            print(f"Agent hit iteration/time limit. Using direct LLM fallback for {ticker}.")
         
-        # Extract the output from the response
-        if isinstance(response, dict) and "output" in response:
-            return response["output"]
-        return response
+        # Use a direct call to the LLM without the agent framework
+            fallback_prompt = f"""
+            You are a professional stock market analyst. Based on the following information about {ticker} stock:
+        
+            Price data: {price_data}
+        
+            Please provide:
+            1. A brief summary of what this stock data indicates
+            2. A clear BUY, SELL, or HOLD recommendation
+            3. A 1-2 sentence justification for your recommendation
+        
+            Format your response as a brief paragraph with your recommendation clearly stated.
+            """
+        
+            direct_response = self.llm.invoke(fallback_prompt)
+            return direct_response.content
+        
+        except Exception as e:
+            print(f"Error in stock analysis: {str(e)}")
+            return f"Analysis failed for {ticker}: {str(e)}"
         
     def reset_memory(self):
         """
